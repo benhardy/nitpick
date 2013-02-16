@@ -1,0 +1,16 @@
+<%@ val title: String %>
+<%@ val headline: String = title %>
+<%@ val body: String %>
+!!!
+<html>
+<head>
+<title>${title}</title>
+<link rel="stylesheet" type="text/css" href="/style.css"/>
+
+
+<body>
+    <h1>${headline}</h1>
+    ${unescape(body)}
+</body>
+</html>
+

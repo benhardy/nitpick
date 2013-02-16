@@ -1,0 +1,17 @@
+<%@ val review: net.bhardy.nitpick.Review %>
+
+<div id="reviewHeader">
+Review #${review.reviewId}
+</div>
+
+<div id="fileList">
+
+file list goes here
+</div>
+
+
+<div id="diffPanel">
+diffing sauce goes here
+</div>
+
+
