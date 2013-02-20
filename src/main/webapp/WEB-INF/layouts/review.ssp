@@ -1,5 +1,74 @@
 <%@ val review: net.bhardy.nitpick.Review %>
 
+<script language="JavaScript">
+<!--
+function forEach(array, action) {
+  for (var i = 0; i < array.length; i++)
+    action(array[i]);
+}
+
+function map(func, array) {
+  var result = [];
+  forEach(array, function (element) {
+    result.push(func(element));
+  });
+  return result;
+}
+
+
+function fileToListItem(file) {
+    var item = document.createElement('li');
+    var itemText = document.createTextNode(file.name);
+    var itemLink = document.createElement('a');
+    itemLink.appendChild(itemText);
+    item.appendChild(itemLink);
+
+    if (file.children) { // it's a directory, even if this is empty
+        var kidList = document.createElement('ul');
+        forEach(file.children, function(child){
+            kidList.appendChild(fileToListItem(child))
+        });
+        item.appendChild(kidList);
+        item.className = "folder";
+    } else {
+        item.className = "file";
+    }
+    return item;
+}
+
+function onLoadHandler() {
+    $("fileList").empty();
+    $.getJSON("/review/${review.reviewId}/affected-files", function(data, status, req) {
+        var fileListHtml = document.createElement('ul');
+        fileListHtml.appendChild(fileToListItem(data));
+        $("#fileList").append(fileListHtml);
+
+        // Find list items representing folders and turn them
+        // into links that can expand/collapse the tree leaf.
+        $('#fileList li.folder').each(function(i) {
+            var sub_ul = $(this).children('ul');
+            $(this).children('a').click(function() {
+                // Make the anchor toggle the leaf display.
+                sub_ul.toggle();
+            });
+        });
+        $('#fileList li.file').each(function(i) {
+            var sub_ul = $(this).children('ul');
+            $(this).children('a').click(function() {
+                // Make the anchor toggle the leaf display.
+                sub_ul.toggle();
+            });
+        });
+
+        // Hide all lists except the outermost.
+        // $('ul ul').hide();
+    });
+
+}
+
+$(document).ready(onLoadHandler);
+-->
+</script>
 <div id="reviewHeader">
 Review #${review.reviewId}
 </div>

@@ -1,3 +1,61 @@
 body {
   font: 12px Verdana, Arial, Helvetica, sans-serif;
 }
+
+div#reviewHeader {
+    width: 100%;
+    border: 1px solid black;
+    margin: 2px;
+}
+
+div#fileList {
+    width: 25%;
+    float: left;
+    border: 1px solid black;
+    margin: 2px;
+
+}
+
+div#diffPanel {
+    width: 70%;
+    border: 1px solid black;
+    margin: 2px;
+    margin-left: 30%;
+}
+
+div#fileList {
+
+}
+
+
+div#fileList ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+div#fileList li {
+    padding-left: 20px;
+}
+div#fileList li.file > a {
+    display: block;
+    background-image: url(/icons/page_white_text.png);
+    background-repeat: no-repeat;
+    background-align: top left;
+    padding-left: 20px;
+}
+div#fileList li.folder > a {
+    display: block;
+    background-image: url(/icons/folder.png);
+    background-repeat: no-repeat;
+    background-align: top left;
+    padding-left: 20px;
+}
+
+div#fileList a {
+    color: #000000;
+    cursor: pointer;
+    text-decoration: none;
+}
+div#fileList a:hover {
+    text-decoration: underline;
+}
