@@ -49,9 +49,7 @@ class NitpickServlet(implicit reviewService:ReviewService)
   get("/review/:reviewId/affected-files") {
     val reviewId: Int = params("reviewId").toInt
     val review = Review(reviewId)
-    val affectedFiles = reviewService.affectedFiles(review)
-    // TODO add the jackson goodness
-    affectedFiles
+    reviewService.affectedFiles(review)
   }
 
   notFound {

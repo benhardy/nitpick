@@ -1,15 +1,19 @@
 package net.bhardy.nitpick.service
 
 import net.bhardy.nitpick.Review
+import collection.immutable
 
 
 sealed trait AffectedPath {
   def name: String
 }
 
-case class AffectedFile(name: String) extends AffectedPath
+case class AffectedFile(name: String)
+  extends AffectedPath {
+}
 
-case class AffectedDirectory(name: String, children: List[AffectedPath]) extends AffectedPath {
+case class AffectedDirectory(name: String, children: List[AffectedPath])
+  extends AffectedPath {
 }
 
 object AffectedDirectory {
@@ -19,30 +23,34 @@ object AffectedDirectory {
 }
 
 /** shortcuts */
-object AffectedPath {
-  def file(name:String) = AffectedFile(name)
-  def dir(name:String) = AffectedDirectory(name, Nil)
-  def dir(name:String, child:AffectedPath) = AffectedDirectory(name, child)
-  def dir(name:String, children:List[AffectedPath]) = AffectedDirectory(name, children)
+trait AffectedPathBuilding {
+  def files(names:String*) = names.map { AffectedFile(_) }.toList
+
+  implicit def file(name: String) = AffectedFile(name)
+
+  implicit def kidList(kids: AffectedPath*) = kids.toList
+
+  class DirBuilder(name:String) {
+    def apply(kids: =>List[AffectedPath]) = AffectedDirectory(name, kids)
+    def apply(kids: AffectedPath) = AffectedDirectory(name, kids :: Nil)
+  }
+  implicit def dir(name: String) = new DirBuilder(name)
 }
 
 trait ReviewService {
   def affectedFiles(forReview: Review): AffectedDirectory
 }
 
-class ReviewServiceImpl extends ReviewService {
+class ReviewServiceImpl extends ReviewService with AffectedPathBuilding {
   def affectedFiles(forReview: Review): AffectedDirectory = {
-    import AffectedPath._
-    dir("/",
-      dir("src",
-        dir("main",
-          dir("scala",
-            file("jaded.sala") ::
-            file("pom.xml") ::
-            Nil
-          )
-        )
-      )
-    )
+    dir(".") {
+      dir("src") {
+        dir("main") {
+          dir("scala") {
+            files("jaded.scala", "pom.xml")
+          }
+        }
+      }
+    }
   }
 }
