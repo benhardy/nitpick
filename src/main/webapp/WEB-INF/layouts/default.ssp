@@ -6,8 +6,10 @@
 <head>
 <title>${title}</title>
 <link rel="stylesheet" type="text/css" href="/style.css"/>
+<!-- TODO restore jquery 1.9.1 online i am back online -->
+<!--script src="http://code.jquery.com/jquery-1.9.1.min.js"></script-->
+<script src="/js/jquery-1.4.2.min.js"></script>
 ${unescape(headBits)}
-<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
 
 <body>
     <h1>${headline}</h1>

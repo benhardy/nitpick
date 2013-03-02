@@ -2,7 +2,7 @@ package net.bhardy.nitpick
 
 import org.scalatra._
 import scalate.ScalateSupport
-import service.ReviewService
+import service.{CreateReviewCommand, ReviewService}
 // JSON-related libraries
 import org.json4s.{DefaultFormats, Formats}
 
@@ -22,8 +22,13 @@ class NitpickServlet(implicit reviewService:ReviewService)
     contentType = formats("json")
   }
 
-
   get("/") {
+    contentType = "text/html"
+    ssp("/layouts/main.ssp", "title" -> "Nitpick.")
+  }
+
+
+  get("/hello") {
     contentType = "text/html"
     <html>
       <head>
@@ -36,6 +41,14 @@ class NitpickServlet(implicit reviewService:ReviewService)
         <a href="/review/2">look at review 2</a>
       </body>
     </html>
+  }
+
+  post("/review/new") {
+    val gitRepo = params("gitrepo")
+    val branch = params("branch")
+    val creationCommand = CreateReviewCommand(gitRepo, branch)
+    val review = reviewService.createReview(creationCommand)
+    redirect("/review/" + review.reviewId)
   }
 
   get("/review/:reviewId") {

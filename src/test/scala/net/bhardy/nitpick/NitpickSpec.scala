@@ -13,7 +13,7 @@ class NitpickSpec extends ScalatraSpec with MockitoSugar { def is =
   implicit val reviewServiceDependency = mock[ReviewService]
   addServlet(new NitpickServlet, "/*")
 
-  def root200 = get("/") {
+  def root200 = get("/")  {
     status must_== 200
   }
 }
