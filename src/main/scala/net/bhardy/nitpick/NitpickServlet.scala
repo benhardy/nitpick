@@ -50,7 +50,7 @@ class NitpickServlet(implicit reviewService:ReviewService)
       val branch = params("branch")
       val creationCommand = CreateReviewCommand(gitRepo, branch)
       val review = reviewService.createReview(creationCommand)
-      redirect("/review/" + review.reviewId)
+      review
     }
     catch {
       case e: CreateReviewException => ActionResult(

@@ -34,11 +34,13 @@ var mainScripts = function() {
                 url: '/review/new',
                 data: 'id=header_contact_send&'+$(this).serialize()
             })
-            .done(function(msg) {
-                $("#result").html(msg);
+            .done(function(data) {
+                if (data.reviewId) {
+                    window.location.href = "/review/"+data.reviewId;
+                }
             })
-            .fail(function(msg) {
-                   $("#result").html(msg);
+            .fail(function(xhr, textStatus, errorThrown) {
+                $("#result").html(xhr.responseText);
             });
         });
     };
