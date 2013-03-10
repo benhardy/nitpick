@@ -1,8 +1,9 @@
 package net.bhardy.nitpick
 
 import org.scalatra._
+import org.scalatra.ActionResult._
 import scalate.ScalateSupport
-import service.{CreateReviewCommand, ReviewService}
+import service.{CreateReviewException, CreateReviewCommand, ReviewService}
 // JSON-related libraries
 import org.json4s.{DefaultFormats, Formats}
 
@@ -44,11 +45,20 @@ class NitpickServlet(implicit reviewService:ReviewService)
   }
 
   post("/review/new") {
-    val gitRepo = params("gitrepo")
-    val branch = params("branch")
-    val creationCommand = CreateReviewCommand(gitRepo, branch)
-    val review = reviewService.createReview(creationCommand)
-    redirect("/review/" + review.reviewId)
+    try {
+      val gitRepo = params("gitrepo")
+      val branch = params("branch")
+      val creationCommand = CreateReviewCommand(gitRepo, branch)
+      val review = reviewService.createReview(creationCommand)
+      redirect("/review/" + review.reviewId)
+    }
+    catch {
+      case e: CreateReviewException => ActionResult(
+        status = ResponseStatus(403, "Forbidden"),
+        body = "Sorry, couldn't create that review",
+        headers = Map()
+      )
+    }
   }
 
   get("/review/:reviewId") {

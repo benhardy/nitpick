@@ -1,9 +1,11 @@
 package net.bhardy.nitpick.service
 
 import net.bhardy.nitpick.Review
-import java.io.File
+import java.io._
 import org.eclipse.jgit.api.CreateBranchCommand
-import net.bhardy.nitpick.util.EnvironmentConfig
+import org.eclipse.jgit.api.errors.GitAPIException
+import net.bhardy.nitpick.util.{CounterFile, EnvironmentConfig}
+import net.bhardy.nitpick.Review
 
 /**
  * Affected Paths are used in the review view to show the tree of affected
@@ -56,6 +58,8 @@ case class CreateReviewCommand(
                                 gitRepoSpec:String, // TODO figure out which jgit type this is
                                 gitBranch:String)
 
+class CreateReviewException(msg:String) extends Exception(msg)
+
 /**
  * Service entry point for data relating to reviews.
  */
@@ -79,6 +83,9 @@ class ReviewServiceImpl(implicit envConfig:EnvironmentConfig) extends ReviewServ
 
   val checkoutParentDir = envConfig.reviewCheckoutDirectory
 
+  /**
+   * TODO get this to actually read git repo
+   */
   def affectedFiles(forReview: Review): AffectedDirectory = {
     dir(".") {
       dir("src") {
@@ -95,23 +102,29 @@ class ReviewServiceImpl(implicit envConfig:EnvironmentConfig) extends ReviewServ
     }
   }
 
-  def createReview(creation:CreateReviewCommand): Review = {
-    import collection.JavaConversions._
-    val newReviewId = 2
-    val checkoutDir = new File(checkoutParentDir + "/review" + newReviewId)
+  private def getNextReviewId = {
+    val path = new File(checkoutParentDir + "/review-highest")
+    val counterFile = new CounterFile(path)
+    counterFile.next
+  }
 
-    val repo = Git.cloneRepository().
-      setURI(creation.gitRepoSpec).
-      setCloneAllBranches(true).
-      setDirectory(checkoutDir).
-      call()
-    val ref = Git.open(checkoutDir).checkout().
-      setCreateBranch(true).
-      setName(creation.gitBranch).
-      setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK).
-      setStartPoint("origin/" + creation.gitBranch).
-      setForce(true).
-      call()
-    Review(newReviewId) // TODO return something real
+  def createReview(creation:CreateReviewCommand): Review = {
+
+    try {
+      val nextReviewId = getNextReviewId
+      val checkoutDir = new File(checkoutParentDir + "/review" + nextReviewId)
+
+      val repo = Git.cloneRepository().
+        setURI(creation.gitRepoSpec).
+        setCloneAllBranches(true).
+        setDirectory(checkoutDir).
+        call()
+
+      Review(nextReviewId) // TODO return something real
+    }
+    catch {
+      case e:IOException => throw new CreateReviewException(e.getMessage)
+      case e:GitAPIException => throw new CreateReviewException(e.getMessage)
+    }
   }
 }

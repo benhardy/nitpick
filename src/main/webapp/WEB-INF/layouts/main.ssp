@@ -5,7 +5,7 @@ $(document).ready(mainScripts.onLoadHandler);
 <div id="dialog_overlay"></div>
 <div id="create_dialog" class="web_dialog">
 <h3 class="dialog_title">Create New Review</h3>
-<form method="post" action="/review/new" id="new_review_form" class="dialog_form">
+<form method="post" action="/review/new" id="new_review_form" name="new_review_form" class="dialog_form">
     <ul class="formitems">
         <li>
             <label for="gitrepo">Git Repo URI:</label>
@@ -20,10 +20,12 @@ $(document).ready(mainScripts.onLoadHandler);
         </li>
         <li>
             <label for="create_button">&nbsp;</label>
-            <button type="button" id="create_button">Create</button>
+            <input type="submit"  id="create_button" value="Create Review"/>
         </li>
     </ul>
 </form>
+
+<div id="result"></div>
 </div>
 <div id="reviewHeader">
 <a href="#" id="a_create_review">Create Review</a>
