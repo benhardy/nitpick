@@ -1,7 +1,6 @@
 package net.bhardy.nitpick
 
 import org.scalatra._
-import org.scalatra.ActionResult._
 import scalate.ScalateSupport
 import service.{CreateReviewException, CreateReviewCommand, ReviewService}
 // JSON-related libraries
@@ -55,7 +54,7 @@ class NitpickServlet(implicit reviewService:ReviewService)
     catch {
       case e: CreateReviewException => ActionResult(
         status = ResponseStatus(403, "Forbidden"),
-        body = "Sorry, couldn't create that review",
+        body = "Sorry, couldn't create that review: " + e.getMessage,
         headers = Map()
       )
     }

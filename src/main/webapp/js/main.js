@@ -5,17 +5,29 @@
  *
  */
 var mainScripts = function() {
+    var escHandler = function (e) {
+        switch(e.which) {
+            case 27:  // esc
+                hideCreateDialog()
+                e.preventDefault();
+                break;
+        }
+    };
 
     var hideCreateDialog = function(e) {
         $("#dialog_overlay").hide();
         $("#create_dialog").hide();
+        $(document).keydown(escHandler);
     };
 
+
     var showCreateDialog = function(e) {
-       $("#dialog_overlay").show();
-       $("#create_dialog").fadeIn(300);
-       // close the dialog when anywhere outside it is clicked
-       $("#dialog_overlay").click(hideCreateDialog);
+        $("#dialog_overlay").show();
+        $("#create_dialog").fadeIn(300);
+        $("#gitrepo").focus();
+        // close the dialog when anywhere outside it is clicked
+        $("#dialog_overlay").click(hideCreateDialog);
+        $(document).bind("keydown", escHandler);
     };
 
     /**
