@@ -58,7 +58,7 @@ case class CreateReviewCommand(
                                 gitRepoSpec:String, // TODO figure out which jgit type this is
                                 gitBranch:String)
 
-class CreateReviewException(msg:String) extends Exception(msg)
+class CreateReviewException(msg:String) extends RuntimeException(msg)
 
 /**
  * Service entry point for data relating to reviews.

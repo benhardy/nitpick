@@ -1,19 +1,41 @@
 package net.bhardy.nitpick
 
-import org.scalatra.test.specs2._
+
+import org.scalatest.matchers.{ShouldMatchers, MustMatchers}
+import org.scalatest.{FunSuite, FunSpec}
+import org.scalatra.test.scalatest._
+import service.{CreateReviewException, CreateReviewCommand, ReviewService}
 import org.scalatest.mock.MockitoSugar
-import service.ReviewService
+import org.mockito.Mockito._
+import org.mockito.Matchers
 
-// For more on Specs2, see http://etorreborre.github.com/specs2/guide/org.specs2.guide.QuickStart.html
-class NitpickSpec extends ScalatraSpec with MockitoSugar { def is =
-  "GET / on Nitpick"                     ^
-    "should return status 200"                  ! root200^
-                                                end
-
-  implicit val reviewServiceDependency = mock[ReviewService]
+class NitpickSpec extends ScalatraSuite with FunSuite with MockitoSugar {
+  /*
+    def is =
+    "GET / on Nitpick"                     ^
+      "should return status 200"                  ! root200^
+                                                  end
+  */
+  implicit val rs = mock[ReviewService]
+  val error = new CreateReviewException("something went wrong")
+  val invalidCreation = CreateReviewCommand("invalid", "master")
+  val validCreation = CreateReviewCommand("someuri", "master")
+  doThrow(error).when(rs).createReview(Matchers.eq(invalidCreation))
+  when(rs.createReview(Matchers.eq(validCreation))).thenReturn(Review(42))
   addServlet(new NitpickServlet, "/*")
 
-  def root200 = get("/")  {
-    status must_== 200
+  test("review creation success") {
+    post("/review/new", Seq("gitrepo"->"someuri", "branch"->"master")) {
+      status must be === (200)
+      body must be === "{\"reviewId\":42}"
+    }
   }
+
+  test("review creation failure") {
+    post("/review/new", Seq("gitrepo"->"invalid", "branch"->"master")) {
+      status must be === (403)
+      body must be === ("Sorry, couldn't create that review: something went wrong")
+    }
+  }
+
 }

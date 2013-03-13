@@ -22,6 +22,7 @@ libraryDependencies ++= Seq(
     "org.scalatra" %% "scalatra-scalate" % "2.2.0",
     "org.scalatra" %% "scalatra-specs2" % "2.2.0" % "test",
     "org.scalatra" %% "scalatra-json" % "2.2.0",
+    "org.scalatra" %% "scalatra-scalatest" % "2.2.0" % "test",
     "org.json4s" %% "json4s-jackson" % "3.1.0",
     "org.eclipse.jgit" % "org.eclipse.jgit" % "2.2.0.201212191850-r",
     "ch.qos.logback" % "logback-classic" % "1.0.6" % "runtime",
