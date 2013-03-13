@@ -27,22 +27,6 @@ class NitpickServlet(implicit reviewService:ReviewService)
     ssp("/layouts/main.ssp", "title" -> "Nitpick.")
   }
 
-
-  get("/hello") {
-    contentType = "text/html"
-    <html>
-      <head>
-        <link rel="stylesheet" type="text/css" href="/style.css"/>
-      </head>
-      <body>
-        <h1>Hello, world!</h1>
-        Say <a href="hello-scalate">hello to Scalate</a>.
-        <p/>
-        <a href="/review/2">look at review 2</a>
-      </body>
-    </html>
-  }
-
   post("/review/new") {
     try {
       val gitRepo = params("gitrepo")
