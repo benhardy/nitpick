@@ -1,4 +1,5 @@
-//  addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.2.0")
+import de.johoop.jacoco4sbt._
+import JacocoPlugin._
 
 organization := "net.bhardy"
 
@@ -6,11 +7,15 @@ name := "Nitpick"
 
 version := "0.1.0-SNAPSHOT"
 
+
 scalaVersion := "2.10.0"
 
-seq(webSettings :_*)
+seq(webSettings : _*)
+
+seq(jacoco.settings : _*)
 
 classpathTypes ~= (_ + "orbit")
+
 
 libraryDependencies ++= Seq(
     "org.scalatra" %% "scalatra" % "2.2.0",
@@ -22,7 +27,7 @@ libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.0.6" % "runtime",
     "org.eclipse.jetty" % "jetty-webapp" % "8.1.7.v20120910" % "container;test",
     "org.scalatest" %% "scalatest" % "1.9.1"  % "test",
-  "org.eclipse.jetty.orbit" % "javax.servlet" % "3.0.0.v201112011016" % "container;provided;test" artifacts (Artifact("javax.servlet", "jar", "jar"))
+    "org.eclipse.jetty.orbit" % "javax.servlet" % "3.0.0.v201112011016" % "container;provided;test" artifacts (Artifact("javax.servlet", "jar", "jar"))
 ).map{
     _.exclude("com.typesafe.akka", "akka-actor")
 }

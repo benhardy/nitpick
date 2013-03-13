@@ -27,6 +27,17 @@ you just made is located, e.g.:
 $ cd $name__snake$
 $ ./sbt  -Druntime.properties.file=/home/me/runtime.properties
 > container:start
+> ~ ;test;copy-resources;aux-compile
 ```
 
 Now open the site's [root page](http://localhost:8080/) in your browser.
+
+## Generate/view test coverage report
+
+```sbt jacoco:cover
+```
+
+Then just open the following file (relative to project directory) in browser.
+
+```target/scala-2.10/jacoco/html/index.html
+```
