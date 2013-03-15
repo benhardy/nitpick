@@ -8,16 +8,10 @@ import service._
 import org.scalatest.mock.MockitoSugar
 import org.mockito.Mockito._
 import org.mockito.Matchers
-import net.bhardy.nitpick.Review
 import service.CreateReviewCommand
 
 class NitpickSpec extends ScalatraSuite with FunSuite with MockitoSugar {
-  /*
-    def is =
-    "GET / on Nitpick"                     ^
-      "should return status 200"                  ! root200^
-                                                  end
-  */
+
   implicit val rs = mock[ReviewService]
   val error = new CreateReviewException("something went wrong")
   val invalidCreation = CreateReviewCommand("invalid", "master")

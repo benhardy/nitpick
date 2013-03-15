@@ -102,24 +102,20 @@ class ReviewServiceImpl(implicit envConfig:EnvironmentConfig) extends ReviewServ
     }
   }
 
-  private def getNextReviewId = {
+  protected def getNextReviewId: Int = {
     val path = new File(checkoutParentDir + "/review-highest")
     val counterFile = new CounterFile(path)
     counterFile.next
   }
 
-  def createReview(creation:CreateReviewCommand): Review = {
+  def createReview(creation: CreateReviewCommand,
+                    cloner: (String,File) => Unit = clone): Review = {
 
     try {
       val nextReviewId = getNextReviewId
       val checkoutDir = new File(checkoutParentDir + "/review" + nextReviewId)
 
-      val repo = Git.cloneRepository().
-        setURI(creation.gitRepoSpec).
-        setCloneAllBranches(true).
-        setDirectory(checkoutDir).
-        call()
-
+      val repo = cloner(creation.gitRepoSpec, checkoutDir)
       Review(nextReviewId) // TODO return something real
     }
     catch {
@@ -127,4 +123,15 @@ class ReviewServiceImpl(implicit envConfig:EnvironmentConfig) extends ReviewServ
       case e:GitAPIException => throw new CreateReviewException(e.getMessage)
     }
   }
+
+  def clone(gitRepoSpec: String, checkoutDir:File) : Unit = {
+    Git.cloneRepository().
+    setURI(gitRepoSpec).
+    setCloneAllBranches(true).
+    setDirectory(checkoutDir).
+    call()
+  }
+
+  def createReview(creation: CreateReviewCommand) = createReview(creation, clone)
+
 }

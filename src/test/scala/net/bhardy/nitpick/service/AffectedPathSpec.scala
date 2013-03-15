@@ -23,7 +23,7 @@ class AffectedPathSpec extends FunSpec with MustMatchers {
     it("should compose nicely") {
       val tree = (new Client).dirs
       tree match {
-        case AffectedDirectory(".", _) => true
+        case AffectedDirectory(".", _) => 
         case _ => fail()
       }
     }
