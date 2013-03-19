@@ -2,12 +2,16 @@ package net.bhardy.nitpick.util
 
 import org.scalatest.FunSpec
 import org.scalatest.matchers.MustMatchers
+import org.scalatest.mock.MockitoSugar
 import java.io.{InputStream, ByteArrayInputStream, File}
 
+import org.mockito.Mockito.doThrow
+import org.mockito.Mockito.verify
+import org.mockito.Matchers.anyObject
 /**
  * TODO add mockito
  */
-class EnvironmentPropertiesSpec extends FunSpec with MustMatchers {
+class EnvironmentPropertiesSpec extends FunSpec with MustMatchers with MockitoSugar {
 
   /**
    * For testing purposes, construct an EnvironmentProperties
@@ -20,7 +24,6 @@ class EnvironmentPropertiesSpec extends FunSpec with MustMatchers {
     def fakeStreamOpener(file: File): InputStream = fakeStream
     EnvironmentProperties(file, fakeStreamOpener)
   }
-
 
   describe("EnvironmentProperties") {
     it("should create from a stream") {

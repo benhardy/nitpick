@@ -19,3 +19,6 @@ target/
 
 # Mac
 .DS_Store
+
+#vim
+*.swp

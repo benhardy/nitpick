@@ -23,10 +23,10 @@ class ReviewServiceImplSpec extends FunSpec with MustMatchers with MockitoSugar 
   val service = new ReviewServiceImpl {
     override def getNextReviewId:Int = 42
   }
-  val mockCloner = mock[(String,File)=>Unit]
 
   describe("createReview") {
-    it("should return a Review with a repo cloning") {
+    it("should return a Review upon successful repo cloning") {
+      val mockCloner = mock[(String,File)=>Unit]
       val review = service.createReview(cmd, mockCloner)
       review.reviewId must be === 42
       verify(mockCloner).apply("file:///tmp/a/repo", new File("/tmp/checkouts/review42"))
