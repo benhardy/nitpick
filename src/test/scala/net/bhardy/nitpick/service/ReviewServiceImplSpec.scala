@@ -19,7 +19,7 @@ class ReviewServiceImplSpec extends FunSpec with MustMatchers with MockitoSugar 
     case _ => throw new IllegalArgumentException
   })
   implicit val conf = new EnvironmentConfig(envProps)
-  val cmd = CreateReviewCommand("file:///tmp/a/repo","master")
+  val cmd = CreateReviewCommand("file:///tmp/a/repo","master","against")
   val service = new ReviewServiceImpl {
     override def getNextReviewId:Int = 42
   }
@@ -47,7 +47,7 @@ class ReviewServiceImplSpec extends FunSpec with MustMatchers with MockitoSugar 
         val review = service.createReview(cmd, gitFailCloner)
       }
     }
-      
+
   }
 }
 

@@ -31,7 +31,8 @@ class NitpickServlet(implicit reviewService:ReviewService)
     try {
       val gitRepo = params("gitrepo")
       val branch = params("branch")
-      val creationCommand = CreateReviewCommand(gitRepo, branch)
+      val against = params("against")
+      val creationCommand = CreateReviewCommand(gitRepo, branch, against)
       val review = reviewService.createReview(creationCommand)
       review
     }

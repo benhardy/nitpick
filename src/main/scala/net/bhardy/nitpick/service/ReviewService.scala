@@ -2,7 +2,6 @@ package net.bhardy.nitpick.service
 
 import net.bhardy.nitpick.Review
 import java.io._
-import org.eclipse.jgit.api.CreateBranchCommand
 import org.eclipse.jgit.api.errors.GitAPIException
 import net.bhardy.nitpick.util.{CounterFile, EnvironmentConfig}
 import net.bhardy.nitpick.Review
@@ -56,7 +55,8 @@ trait AffectedPathBuilding {
 
 case class CreateReviewCommand(
                                 gitRepoSpec:String, // TODO figure out which jgit type this is
-                                gitBranch:String)
+                                featureBranch:String,
+                                against:String)
 
 class CreateReviewException(msg:String) extends RuntimeException(msg)
 
@@ -102,10 +102,8 @@ class ReviewServiceImpl(implicit envConfig:EnvironmentConfig) extends ReviewServ
     }
   }
 
-  protected def getNextReviewId: Int = {
-    val path = new File(checkoutParentDir + "/review-highest")
-    val counterFile = new CounterFile(path)
-    counterFile.next
+  override def createReview(creation: CreateReviewCommand) = {
+    createReview(creation, clone)
   }
 
   def createReview(creation: CreateReviewCommand,
@@ -124,14 +122,19 @@ class ReviewServiceImpl(implicit envConfig:EnvironmentConfig) extends ReviewServ
     }
   }
 
-  def clone(gitRepoSpec: String, checkoutDir:File) : Unit = {
+  // overridden in test
+  protected def getNextReviewId: Int = {
+    val path = new File(checkoutParentDir + "/review-highest")
+    val counterFile = new CounterFile(path)
+    counterFile.next
+  }
+
+  // todo write an integration test that exercises this
+  private def clone(gitRepoSpec: String, checkoutDir:File) : Unit = {
     Git.cloneRepository().
     setURI(gitRepoSpec).
     setCloneAllBranches(true).
     setDirectory(checkoutDir).
     call()
   }
-
-  def createReview(creation: CreateReviewCommand) = createReview(creation, clone)
-
 }

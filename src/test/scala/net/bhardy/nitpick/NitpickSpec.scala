@@ -14,8 +14,8 @@ class NitpickSpec extends ScalatraSuite with FunSuite with MockitoSugar {
 
   implicit val rs = mock[ReviewService]
   val error = new CreateReviewException("something went wrong")
-  val invalidCreation = CreateReviewCommand("invalid", "master")
-  val validCreation = CreateReviewCommand("someuri", "master")
+  val invalidCreation = CreateReviewCommand("invalid", "feature", "master")
+  val validCreation = CreateReviewCommand("someuri", "feature", "master")
   doThrow(error).when(rs).createReview(Matchers.eq(invalidCreation))
   when(rs.createReview(Matchers.eq(validCreation))).thenReturn(Review(42))
   when(rs.affectedFiles(Review(42))).thenReturn(
@@ -35,14 +35,14 @@ class NitpickSpec extends ScalatraSuite with FunSuite with MockitoSugar {
   }
 
   test("review creation success") {
-    post("/review/new", Seq("gitrepo"->"someuri", "branch"->"master")) {
+    post("/review/new", Seq("gitrepo"->"someuri", "branch"->"feature", "against"->"master")) {
       status must be === (200)
       body must be === "{\"reviewId\":42}"
     }
   }
 
   test("review creation failure") {
-    post("/review/new", Seq("gitrepo"->"invalid", "branch"->"master")) {
+    post("/review/new", Seq("gitrepo"->"invalid", "branch"->"feature", "against"->"master")) {
       status must be === (403)
       body must be === ("Sorry, couldn't create that review: something went wrong")
     }
