@@ -7,7 +7,7 @@ $(document).ready(reviewScripts.onLoadHandler);
 -->
 </script>
 <div id="reviewHeader">
-Review #${review.reviewId}
+Review #${review.reviewId.id}
 </div>
 
 <div id="fileList">

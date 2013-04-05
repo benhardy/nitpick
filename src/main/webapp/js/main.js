@@ -47,8 +47,8 @@ var mainScripts = function() {
                 data: 'id=header_contact_send&'+$(this).serialize()
             })
             .done(function(data) {
-                if (data.reviewId) {
-                    window.location.href = "/review/"+data.reviewId;
+                if (data.id) {
+                    window.location.href = "/review/"+data.id;
                 }
             })
             .fail(function(xhr, textStatus, errorThrown) {

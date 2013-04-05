@@ -6,7 +6,11 @@ import scala.List
 
 
 
-case class Review(reviewId: Int) {
+case class ReviewId(id: Int)
+
+case class Review(reviewId: ReviewId, 
+  gitBranch:String,
+  diffBase:String) {
 
 }
 

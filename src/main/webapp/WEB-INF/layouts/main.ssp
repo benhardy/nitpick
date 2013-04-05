@@ -16,6 +16,10 @@ $(document).ready(mainScripts.onLoadHandler);
             <input name="branch" id="branch" type="text" class="dialog_text"/>
         </li>
         <li>
+            <label for="diffbase">Diff from Base:</label>
+            <input name="diffbase" id="diffbase" type="text" class="dialog_text"/>
+        </li>
+        <li>
             <label for="nobody">&nbsp;</label>
         </li>
         <li>

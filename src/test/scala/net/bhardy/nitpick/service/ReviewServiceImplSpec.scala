@@ -1,6 +1,8 @@
 package net.bhardy.nitpick.service
 
 import net.bhardy.nitpick.util.{EnvironmentProperties, EnvironmentConfig}
+import net.bhardy.nitpick.ReviewId
+import net.bhardy.nitpick.Review
 import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.verify
 import org.mockito.Matchers.anyObject
@@ -19,17 +21,17 @@ class ReviewServiceImplSpec extends FunSpec with MustMatchers with MockitoSugar 
     case _ => throw new IllegalArgumentException
   })
   implicit val conf = new EnvironmentConfig(envProps)
-  val cmd = CreateReviewCommand("file:///tmp/a/repo","master")
+  val cmd = CreateReviewCommand("file:///tmp/a/repo","master", "origin/master")
   val service = new ReviewServiceImpl {
-    override def getNextReviewId:Int = 42
+    override def getNextReviewId = ReviewId(42)
   }
 
   describe("createReview") {
     it("should return a Review upon successful repo cloning") {
       val mockCloner = mock[(String,File)=>Unit]
       val review = service.createReview(cmd, mockCloner)
-      review.reviewId must be === 42
-      verify(mockCloner).apply("file:///tmp/a/repo", new File("/tmp/checkouts/review42"))
+      review.reviewId.id must be === 42
+      verify(mockCloner).apply("file:///tmp/a/repo", new File("/tmp/checkouts/review42/repo"))
     }
     it("should encapsulate IO exceptions with a CreateReviewException") {
       intercept[CreateReviewException] {
@@ -47,7 +49,13 @@ class ReviewServiceImplSpec extends FunSpec with MustMatchers with MockitoSugar 
         val review = service.createReview(cmd, gitFailCloner)
       }
     }
+  }
+
+  describe("affectedFiles") {
+    it("should read properties file previously created") {
+
       
+    }
   }
 }
 

@@ -5,7 +5,8 @@ import java.io._
 import org.eclipse.jgit.api.CreateBranchCommand
 import org.eclipse.jgit.api.errors.GitAPIException
 import net.bhardy.nitpick.util.{CounterFile, EnvironmentConfig}
-import net.bhardy.nitpick.Review
+import net.bhardy.nitpick.{ReviewId,Review}
+import java.util.Properties
 
 /**
  * Affected Paths are used in the review view to show the tree of affected
@@ -56,7 +57,8 @@ trait AffectedPathBuilding {
 
 case class CreateReviewCommand(
                                 gitRepoSpec:String, // TODO figure out which jgit type this is
-                                gitBranch:String)
+                                gitBranch:String,
+                                diffBase:String)
 
 class CreateReviewException(msg:String) extends RuntimeException(msg)
 
@@ -69,9 +71,11 @@ trait ReviewService {
    * @param forReview - the review for changes affecting those paths
    * @return
    */
-  def affectedFiles(forReview: Review): AffectedDirectory
+  def affectedFiles(forReview: ReviewId): AffectedDirectory
 
   def createReview(creation: CreateReviewCommand): Review
+
+  def fetch(reviewId: ReviewId): Review
 }
 
 /**
@@ -79,33 +83,77 @@ trait ReviewService {
  */
 class ReviewServiceImpl(implicit envConfig:EnvironmentConfig) extends ReviewService with AffectedPathBuilding {
 
-  import org.eclipse.jgit.api.Git
+  import org.slf4j.{Logger, LoggerFactory}
+  import org.eclipse.jgit.storage.file.FileRepository
+  import org.eclipse.jgit.revwalk.{RevCommit,RevWalk}
+  import org.eclipse.jgit.diff.{DiffFormatter,RawTextComparator,DiffEntry}
+  import org.eclipse.jgit.util.io.DisabledOutputStream
+  import org.eclipse.jgit.lib.{ObjectId,Ref,Repository}
+
+  val logger =  LoggerFactory.getLogger(getClass)
+
 
   val checkoutParentDir = envConfig.reviewCheckoutDirectory
 
-  /**
-   * TODO get this to actually read git repo
-   */
-  def affectedFiles(forReview: Review): AffectedDirectory = {
-    dir(".") {
-      dir("src") {
-        dir("main")(
-          dir("scala"){
-            files("jaded.scala", "pom.xml")
-          },
-          file("dork.txt"),
-          dir("things") {
-            file("mutton.txt")
-          }
-        )
+  def gitObjectId(repo:Repository, gitString:String): Option[ObjectId] = {
+    val tryRef: Option[Ref] = Option(repo.getRef(gitString))
+    val oid1 = tryRef.map { ref =>
+        val oid = ref.getObjectId
+        logger.info(s"2. found ref $gitString in repo, converted to objectId "+oid)
+        oid
       }
-    }
+    oid1.orElse {
+        logger.info(s"3. Could not find ref $gitString in repo")
+        val desperation = Option(repo.resolve(gitString))
+        if (!desperation.isDefined) {
+          logger.info(s"4. Could not find $gitString in repo as ref or an objectId, i am sad.")
+        } else {
+          logger.info(s"5. Could not find $gitString in repo as ref but found as an objectId, yay")
+        }
+        desperation
+      }
   }
 
-  protected def getNextReviewId: Int = {
+  def affectedFiles(reviewId: ReviewId): AffectedDirectory = {
+    val review = fetch(reviewId)
+    val repository = new FileRepository(cloneDirectory(reviewId))
+    val revWalk = new RevWalk(repository)
+    logger.info(s"Hey. gonna try getting affected files for $review")
+    val res = for {
+      fromObject <- gitObjectId(repository, review.diffBase)
+      toObject <- gitObjectId(repository, review.gitBranch)
+    } yield {
+      val commit: RevCommit = revWalk.parseCommit(toObject)
+      val parent: RevCommit = revWalk.parseCommit(fromObject)
+      val df: DiffFormatter = new DiffFormatter(DisabledOutputStream.INSTANCE)
+      df.setRepository(repository)
+      df.setDiffComparator(RawTextComparator.DEFAULT)
+      df.setDetectRenames(true)
+      import scala.collection.JavaConversions._
+      val diffs:List[DiffEntry] = df.scan(parent.getTree, commit.getTree).toList
+      for (diff <- diffs) {
+          logger.info(List("FOUND: ",
+                diff.getChangeType().name(), 
+                diff.getNewMode().getBits(), 
+                diff.getNewPath()).mkString(" "))
+      }
+    }
+    logger.info(s"res = $res")
+
+    AffectedDirectory(".", Nil)
+  }
+
+  protected def getNextReviewId: ReviewId = {
     val path = new File(checkoutParentDir + "/review-highest")
     val counterFile = new CounterFile(path)
-    counterFile.next
+    ReviewId(counterFile.next)
+  }
+
+  def reviewDirectory(reviewId:ReviewId): File = {
+    new File(checkoutParentDir, "review" + reviewId.id)
+  }
+  def cloneDirectory(reviewId:ReviewId): File = {
+    new File(reviewDirectory(reviewId), "repo")
   }
 
   def createReview(creation: CreateReviewCommand,
@@ -113,10 +161,11 @@ class ReviewServiceImpl(implicit envConfig:EnvironmentConfig) extends ReviewServ
 
     try {
       val nextReviewId = getNextReviewId
-      val checkoutDir = new File(checkoutParentDir + "/review" + nextReviewId)
-
-      val repo = cloner(creation.gitRepoSpec, checkoutDir)
-      Review(nextReviewId) // TODO return something real
+      val reviewDir = reviewDirectory(nextReviewId)
+      reviewDir.mkdirs
+      val repo = cloner(creation.gitRepoSpec, cloneDirectory(nextReviewId))
+      saveReviewInfo(reviewDir, creation)
+      Review(nextReviewId, creation.gitBranch, creation.diffBase)
     }
     catch {
       case e:IOException => throw new CreateReviewException(e.getMessage)
@@ -124,11 +173,46 @@ class ReviewServiceImpl(implicit envConfig:EnvironmentConfig) extends ReviewServ
     }
   }
 
-  def clone(gitRepoSpec: String, checkoutDir:File) : Unit = {
+  def saveReviewInfo(reviewDir:File, creation:CreateReviewCommand) {
+    val reviewPropsPath = new File(reviewDir, "review.properties")
+    val reviewProps = new Properties
+    reviewProps.setProperty("git.repo.spec", creation.gitRepoSpec)
+    reviewProps.setProperty("git.branch", creation.gitBranch)
+    reviewProps.setProperty("git.diff.base", creation.diffBase)
+    val c:OutputStream = new FileOutputStream(reviewPropsPath)
+    using(c) { os =>
+      reviewProps.store(os, "")
+    }
+  }
+
+  def fetch(reviewId:ReviewId): Review = {
+    val reviewDir = reviewDirectory(reviewId)
+    val reviewPropsPath = new File(reviewDir, "review.properties")
+    val reviewProps = new Properties
+    val c:InputStream =  new FileInputStream(reviewPropsPath)
+    using(c) { is =>
+      reviewProps.load(is)
+    }
+    val branch = Option(reviewProps.getProperty("git.branch")).getOrElse("")
+    val diffBase = Option(reviewProps.getProperty("git.diff.base")).getOrElse("")
+    Review(reviewId, branch, diffBase)
+  }
+
+  def using[C <: Closeable](c:C)(block:C=>Unit) {
+    try {
+      block(c)
+    } finally {
+      try { c.close }
+      catch { case e:Exception => }
+    }
+  }
+
+  def clone(gitRepoSpec: String, cloneDir:File) : Unit = {
+    import org.eclipse.jgit.api.Git
     Git.cloneRepository().
     setURI(gitRepoSpec).
     setCloneAllBranches(true).
-    setDirectory(checkoutDir).
+    setDirectory(cloneDir).
     call()
   }
 

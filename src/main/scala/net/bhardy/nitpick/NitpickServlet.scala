@@ -31,9 +31,10 @@ class NitpickServlet(implicit reviewService:ReviewService)
     try {
       val gitRepo = params("gitrepo")
       val branch = params("branch")
-      val creationCommand = CreateReviewCommand(gitRepo, branch)
+      val diffBase = params.getOrElse("diffbase", "origin/master")
+      val creationCommand = CreateReviewCommand(gitRepo, branch, diffBase)
       val review = reviewService.createReview(creationCommand)
-      review
+      review.reviewId
     }
     catch {
       case e: CreateReviewException => ActionResult(
@@ -45,17 +46,22 @@ class NitpickServlet(implicit reviewService:ReviewService)
   }
 
   get("/review/:reviewId") {
-    val reviewId: Int = params("reviewId").toInt
-    val review = Review(reviewId)
+    try {
+      val reviewId = ReviewId(params("reviewId").toInt)
+      val review = reviewService.fetch(reviewId)
+      contentType = "text/html"
+      ssp("/layouts/review.ssp", "review" -> review, "title" -> "some review")
+    } catch {
+      case e => e.printStackTrace(System.err)
+      throw e
+    }
 
-    contentType = "text/html"
-    ssp("/layouts/review.ssp", "review" -> review, "title" -> "some review")
   }
 
   get("/review/:reviewId/affected-files") {
-    val reviewId: Int = params("reviewId").toInt
-    val review = Review(reviewId)
-    reviewService.affectedFiles(review)
+    val reviewId = ReviewId(params("reviewId").toInt)
+
+    reviewService.affectedFiles(reviewId)
   }
 
   notFound {
