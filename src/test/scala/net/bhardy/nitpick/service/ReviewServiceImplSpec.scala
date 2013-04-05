@@ -53,8 +53,7 @@ class ReviewServiceImplSpec extends FunSpec with MustMatchers with MockitoSugar 
 
   describe("affectedFiles") {
     it("should read properties file previously created") {
-
-      
+      // TODO
     }
   }
 }

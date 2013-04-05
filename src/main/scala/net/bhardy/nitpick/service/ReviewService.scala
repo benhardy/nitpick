@@ -2,7 +2,6 @@ package net.bhardy.nitpick.service
 
 import net.bhardy.nitpick.Review
 import java.io._
-import org.eclipse.jgit.api.CreateBranchCommand
 import org.eclipse.jgit.api.errors.GitAPIException
 import net.bhardy.nitpick.util.{CounterFile, EnvironmentConfig}
 import net.bhardy.nitpick.{ReviewId,Review}
@@ -207,6 +206,7 @@ class ReviewServiceImpl(implicit envConfig:EnvironmentConfig) extends ReviewServ
     }
   }
 
+  // todo write an integration test that exercises this
   def clone(gitRepoSpec: String, cloneDir:File) : Unit = {
     import org.eclipse.jgit.api.Git
     Git.cloneRepository().
@@ -217,5 +217,4 @@ class ReviewServiceImpl(implicit envConfig:EnvironmentConfig) extends ReviewServ
   }
 
   def createReview(creation: CreateReviewCommand) = createReview(creation, clone)
-
 }
