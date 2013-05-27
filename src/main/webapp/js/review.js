@@ -27,15 +27,16 @@ function reviewScriptsForId(reviewId) {
      * The root node will be returned as a naked "li" tag.
      */
     function pathToListItem(path) {
+        console.log(path);
         var item = document.createElement('li');
         var itemText = document.createTextNode(path.name);
         var itemLink = document.createElement('a');
         itemLink.appendChild(itemText);
         item.appendChild(itemLink);
-
-        if (path.children) { // it's a directory, even if this is empty
+        kids = path.children || path.trees
+        if (kids) { // it's a directory, even if this is empty
             var kidList = document.createElement('ul');
-            foreach(path.children, function(child){
+            foreach(kids, function(child){
                 kidList.appendChild(pathToListItem(child))
             });
             item.appendChild(kidList);
@@ -72,7 +73,7 @@ function reviewScriptsForId(reviewId) {
 
     function onLoadHandler() {
         $("fileList").empty();
-        $.getJSON("/review/"+reviewId+"/affected-files", affectedFileListHandler);
+        $.getJSON("/review/"+reviewId+"/change-summary", affectedFileListHandler);
     }
 
     return {

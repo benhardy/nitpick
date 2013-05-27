@@ -1,18 +1,19 @@
 package net.bhardy.nitpick.service
 
-import net.bhardy.nitpick.util.{EnvironmentProperties, EnvironmentConfig}
-import net.bhardy.nitpick.ReviewId
 import net.bhardy.nitpick.Review
+import net.bhardy.nitpick.ReviewId
+import net.bhardy.nitpick.util.{EnvironmentProperties, EnvironmentConfig}
+import org.eclipse.jgit.api.Git
+import org.eclipse.jgit.api.errors.{GitAPIException,InvalidRemoteException}
+import org.mockito.Matchers.anyObject
 import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.verify
-import org.mockito.Matchers.anyObject
-
-import java.io.IOException
-import org.eclipse.jgit.api.errors.{GitAPIException,InvalidRemoteException}
 import org.scalatest.FunSpec
 import org.scalatest.matchers.MustMatchers
 import org.scalatest.mock.MockitoSugar
+
 import java.io.File
+import java.io.IOException
 
 class ReviewServiceImplSpec extends FunSpec with MustMatchers with MockitoSugar {
 
@@ -28,14 +29,14 @@ class ReviewServiceImplSpec extends FunSpec with MustMatchers with MockitoSugar 
 
   describe("createReview") {
     it("should return a Review upon successful repo cloning") {
-      val mockCloner = mock[(String,File)=>Unit]
+      val mockCloner = mock[(String,File)=>Git]
       val review = service.createReview(cmd, mockCloner)
       review.reviewId.id must be === 42
       verify(mockCloner).apply("file:///tmp/a/repo", new File("/tmp/checkouts/review42/repo"))
     }
     it("should encapsulate IO exceptions with a CreateReviewException") {
       intercept[CreateReviewException] {
-        val ioFailCloner: (String,File)=>Unit = { (a,b) =>
+        val ioFailCloner: (String,File)=>Git = { (a,b) =>
           throw new IOException()
         }
         val review = service.createReview(cmd, ioFailCloner)
@@ -43,7 +44,7 @@ class ReviewServiceImplSpec extends FunSpec with MustMatchers with MockitoSugar 
     }
     it("should encapsulate Git exceptions with a CreateReviewException") {
       intercept[CreateReviewException] {
-        val gitFailCloner: (String,File)=>Unit = { (a,b) =>
+        val gitFailCloner: (String,File)=>Git = { (a,b) =>
           throw new InvalidRemoteException("wat")
         }
         val review = service.createReview(cmd, gitFailCloner)

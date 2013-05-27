@@ -18,14 +18,16 @@ class NitpickSpec extends ScalatraSuite with FunSuite with MockitoSugar {
   val validCreationDefault = CreateReviewCommand("someuri", "master", "origin/master")
   val validCreationNotDefault = CreateReviewCommand("someuri", "master", "myotherbranch")
   doThrow(error).when(rs).createReview(Matchers.eq(invalidCreation))
-  val defaultReview = Review(ReviewId(42), "master", "origin/master")
-  val nonDefaultReview = Review(ReviewId(42), "master", "myotherbranch")
+  val defaultReview = Review(ReviewId(42), "master", "origin/master", Nil)
+  val nonDefaultReview = Review(ReviewId(42), "master", "myotherbranch", Nil)
   when(rs.createReview(Matchers.eq(validCreationDefault))).thenReturn(defaultReview)
   when(rs.createReview(Matchers.eq(validCreationNotDefault))).thenReturn(nonDefaultReview)
-  when(rs.affectedFiles(ReviewId(42))).thenReturn(
-    AffectedDirectory(".", List(
-      AffectedFile("README.txt")
-    ))
+  when(rs.changeSummary(ReviewId(42))).thenReturn(
+    new ChangeSummary(
+      List(PathSegment(name="src", entries = Nil, children = List(
+        PathSegment(name="scala", entries = Nil, children = Nil)
+      )))
+    )
   )
   when(rs.fetch(ReviewId(42))).thenReturn(nonDefaultReview)
   addServlet(new NitpickServlet, "/*")
@@ -66,11 +68,13 @@ class NitpickSpec extends ScalatraSuite with FunSuite with MockitoSugar {
     }
   }
 
-  test("affected file list retrieval success") {
-    get("/review/42/affected-files") {
+  test("change summary retrieval success") {
+    get("/review/42/change-summary") {
       status must be === 200
-      val expected = "{\"name\":\".\",\"children\":[{\"name\":\"README.txt\"}]}"
-      body must be === expected
+      val expected = "{\"trees\":[{\"name\":\"src\",\"entries\":[],\"children\":[{\"name\":\"scala\",\"entries\":[],\"children\":[]}]}]}"
+      System.err.println(expected)
+      System.err.println(body)
+      body.toString must be === expected
     }
   }
 

@@ -1,58 +1,18 @@
 package net.bhardy.nitpick.service
 
 import net.bhardy.nitpick.Review
-import java.io._
-import org.eclipse.jgit.api.errors.GitAPIException
 import net.bhardy.nitpick.util.{CounterFile, EnvironmentConfig}
 import net.bhardy.nitpick.{ReviewId,Review}
+import org.eclipse.jgit.api.ListBranchCommand.ListMode
+import org.eclipse.jgit.api.errors.GitAPIException
+import org.eclipse.jgit.api.{Git, ListBranchCommand}
+import org.eclipse.jgit.diff.DiffEntry
+import org.eclipse.jgit.diff.DiffEntry.ChangeType
+import org.eclipse.jgit.treewalk.CanonicalTreeParser
+import scala.collection.JavaConverters._
+
+import java.io._
 import java.util.Properties
-
-/**
- * Affected Paths are used in the review view to show the tree of affected
- * paths in any particular set of revisions.
- */
-sealed trait AffectedPath {
-  def name: String
-}
-
-/**
- * Leaf node in an affected path tree is just a file.
- */
-case class AffectedFile(name: String)
-  extends AffectedPath {
-}
-
-/**
- * Branch node in an affected path tree is a directory. Which of course
- * could contain other files or directories. Or nothing (empty List).
- */
-case class AffectedDirectory(name: String, children: List[AffectedPath])
-  extends AffectedPath {
-}
-
-object AffectedDirectory {
-  def apply(name: String, singlePath: AffectedPath): AffectedDirectory = {
-    AffectedDirectory(name, singlePath :: Nil)
-  }
-}
-
-/**
- * handy stuff for building an AffectedPath tree
- */
-trait AffectedPathBuilding {
-  def files(names:String*) = names.map { AffectedFile(_) }.toList
-
-  implicit def file(name: String) = AffectedFile(name)
-
-  implicit def kidList(kids: AffectedPath*) = kids.toList
-
-  class DirBuilder(name:String) {
-    def apply(kids: =>List[AffectedPath]) = AffectedDirectory(name, kids)
-    def apply(kids: AffectedPath) = AffectedDirectory(name, kids :: Nil)
-    def apply(kids: AffectedPath*) = AffectedDirectory(name, kids.toList)
-  }
-  implicit def dir(name: String) = new DirBuilder(name)
-}
 
 case class CreateReviewCommand(
                                 gitRepoSpec:String, // TODO figure out which jgit type this is
@@ -70,7 +30,7 @@ trait ReviewService {
    * @param forReview - the review for changes affecting those paths
    * @return
    */
-  def affectedFiles(forReview: ReviewId): AffectedDirectory
+  def changeSummary(forReview: ReviewId): ChangeSummary
 
   def createReview(creation: CreateReviewCommand): Review
 
@@ -80,7 +40,7 @@ trait ReviewService {
 /**
  *
  */
-class ReviewServiceImpl(implicit envConfig:EnvironmentConfig) extends ReviewService with AffectedPathBuilding {
+class ReviewServiceImpl(implicit envConfig:EnvironmentConfig) extends ReviewService {
 
   import org.slf4j.{Logger, LoggerFactory}
   import org.eclipse.jgit.storage.file.FileRepository
@@ -113,9 +73,14 @@ class ReviewServiceImpl(implicit envConfig:EnvironmentConfig) extends ReviewServ
       }
   }
 
+  def changeSummary(reviewId: ReviewId): ChangeSummary = {
+    val review = fetch(reviewId)
+    ChangeSummary.fromDiffs(review.diffEntries)
+  }
+/*
   def affectedFiles(reviewId: ReviewId): AffectedDirectory = {
     val review = fetch(reviewId)
-    val repository = new FileRepository(cloneDirectory(reviewId))
+    val repository = new FileRepository(cloneDirectory(reviewId)+"/.git")
     val revWalk = new RevWalk(repository)
     logger.info(s"Hey. gonna try getting affected files for $review")
     val res = for {
@@ -141,6 +106,7 @@ class ReviewServiceImpl(implicit envConfig:EnvironmentConfig) extends ReviewServ
 
     AffectedDirectory(".", Nil)
   }
+*/
 
   protected def getNextReviewId: ReviewId = {
     val path = new File(checkoutParentDir + "/review-highest")
@@ -156,15 +122,15 @@ class ReviewServiceImpl(implicit envConfig:EnvironmentConfig) extends ReviewServ
   }
 
   def createReview(creation: CreateReviewCommand,
-                    cloner: (String,File) => Unit = clone): Review = {
+                    cloner: (String,File) => Git = clone): Review = {
 
     try {
       val nextReviewId = getNextReviewId
       val reviewDir = reviewDirectory(nextReviewId)
       reviewDir.mkdirs
-      val repo = cloner(creation.gitRepoSpec, cloneDirectory(nextReviewId))
+      val git = cloner(creation.gitRepoSpec, cloneDirectory(nextReviewId))
       saveReviewInfo(reviewDir, creation)
-      Review(nextReviewId, creation.gitBranch, creation.diffBase)
+      Review(nextReviewId, creation.gitBranch, creation.diffBase, Nil)
     }
     catch {
       case e:IOException => throw new CreateReviewException(e.getMessage)
@@ -194,7 +160,12 @@ class ReviewServiceImpl(implicit envConfig:EnvironmentConfig) extends ReviewServ
     }
     val branch = Option(reviewProps.getProperty("git.branch")).getOrElse("")
     val diffBase = Option(reviewProps.getProperty("git.diff.base")).getOrElse("")
-    Review(reviewId, branch, diffBase)
+    val repository = new FileRepository(cloneDirectory(reviewId) + "/.git")
+    val outputStream = new OutputStream {
+      override def write(b:Int) { }
+    }
+    val diffs = gitDiff(new Git(repository), diffBase, branch, outputStream)
+    Review(reviewId, branch, diffBase, diffs)
   }
 
   def using[C <: Closeable](c:C)(block:C=>Unit) {
@@ -207,14 +178,41 @@ class ReviewServiceImpl(implicit envConfig:EnvironmentConfig) extends ReviewServ
   }
 
   // todo write an integration test that exercises this
-  def clone(gitRepoSpec: String, cloneDir:File) : Unit = {
+  def clone(gitRepoSpec: String, cloneDir:File): Git = {
     import org.eclipse.jgit.api.Git
-    Git.cloneRepository().
-    setURI(gitRepoSpec).
-    setCloneAllBranches(true).
-    setDirectory(cloneDir).
-    call()
+    val newGit = Git.cloneRepository()
+      .setURI(gitRepoSpec)
+      .setCloneAllBranches(true)
+      .setDirectory(cloneDir)
+      .setCloneSubmodules(true)
+      .setNoCheckout(false)
+      .setBranch("master")
+      .call()
+    newGit
   }
 
   def createReview(creation: CreateReviewCommand) = createReview(creation, clone)
+
+
+  def gitDiff(git:Git, fromRef:String, toRef:String, outStream:OutputStream): Iterable[DiffEntry] = {
+    System.err.println(s"getting diff from $fromRef to $toRef")
+    val repo = git.getRepository
+    val reader = repo.newObjectReader
+    val res:Option[Iterable[DiffEntry]] = for {
+      r1 <- gitResolveTree(repo, fromRef)
+      r2 <- gitResolveTree(repo, toRef)
+    } yield {
+      val fromTree = new CanonicalTreeParser().resetRoot(reader, r1)
+      val toTree = new CanonicalTreeParser().resetRoot(reader, r2)
+      val entries = git.diff.setOldTree(fromTree).setNewTree(toTree).setOutputStream(outStream).call
+      entries.asScala
+    }
+    res.getOrElse(Nil)
+  }
+
+  def gitResolveTree(repo:Repository, ref:String) = {
+    Option(repo.resolve(s"$ref^{tree}"))
+     .orElse(Option(repo.resolve(s"origin/$ref^{tree}")))
+  }
+
 }

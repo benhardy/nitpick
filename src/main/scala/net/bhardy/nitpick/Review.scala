@@ -1,6 +1,8 @@
 package net.bhardy.nitpick
 
 import scala.List
+import org.eclipse.jgit.diff.DiffEntry
+
 /**
  */
 
@@ -9,8 +11,10 @@ import scala.List
 case class ReviewId(id: Int)
 
 case class Review(reviewId: ReviewId, 
-  gitBranch:String,
-  diffBase:String) {
+  gitBranch: String,
+  diffBase: String,
+  diffEntries: Iterable[DiffEntry]
+                   ) {
 
 }
 

@@ -2,7 +2,7 @@
 <script language="JavaScript" src="/js/review.js"></script>
 <script language="JavaScript">
 <!--
-var reviewScripts = reviewScriptsForId(${review.reviewId});
+var reviewScripts = reviewScriptsForId(${review.reviewId.id});
 $(document).ready(reviewScripts.onLoadHandler);
 -->
 </script>
