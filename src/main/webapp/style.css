@@ -89,6 +89,18 @@ div#fileList span#fileListTitle {
     display: block;
     text-align:top;
 }
+div#fileList>ul {
+  margin-left: 0px;
+  padding-left: 0px;
+}
+div#fileList>ul>li {
+  margin-left: 0px;
+  padding-left: 0px;
+}
+div#fileList>ul>li>ul>li {
+  margin-left: 0px;
+  padding-left: 0px;
+}
 div#fileList {
     width: 200px;
     height: 400px;

@@ -69,6 +69,18 @@ class ChangeSummarySpec extends FunSpec with MustMatchers with MockitoSugar {
         )
       }
 
+      it("strips leading slashes from paths") {
+        val diffs = Array( 
+          mockDiffEntry("/dev/null", "/a/b", ADD)
+        )
+        val summary = ChangeSummary.fromDiffs(diffs.toList)
+        summary must be === ChangeSummary(
+          List(PathSegment("a", Nil,
+            List(PathSegment("b", diffs(0), Nil))
+          ))
+        )
+      }
+
       it("should turn a buncha DiffEntries into a tree") {
         val diffs = Array( 
           mockDiffEntry("a/b/c/d", "a/b/c/d", MODIFY),

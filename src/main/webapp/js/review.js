@@ -34,7 +34,7 @@ function reviewScriptsForId(reviewId) {
         itemLink.appendChild(itemText);
         item.appendChild(itemLink);
         kids = path.children || path.trees
-        if (kids) { // it's a directory, even if this is empty
+        if (kids && kids.length > 0) { // it's a directory, even if this is empty
             var kidList = document.createElement('ul');
             foreach(kids, function(child){
                 kidList.appendChild(pathToListItem(child))

@@ -195,7 +195,6 @@ class ReviewServiceImpl(implicit envConfig:EnvironmentConfig) extends ReviewServ
 
 
   def gitDiff(git:Git, fromRef:String, toRef:String, outStream:OutputStream): Iterable[DiffEntry] = {
-    System.err.println(s"getting diff from $fromRef to $toRef")
     val repo = git.getRepository
     val reader = repo.newObjectReader
     val res:Option[Iterable[DiffEntry]] = for {

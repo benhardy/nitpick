@@ -71,6 +71,7 @@ object ChangeSummary {
         .distinct
         .filter(p => p != null && ! p.equals("/dev/null"))
         .toList
+        .map { path => if (path.startsWith("/")) path.substring(1) else path }
         .map { path => (diff, path) }
     }
     val start: List[PathSegment] = Nil
