@@ -22,3 +22,8 @@ target/
 
 #vim
 *.swp
+
+#eclipse
+.project
+.classpath
+.cache

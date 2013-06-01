@@ -29,10 +29,12 @@ function reviewScriptsForId(reviewId) {
     function pathToListItem(path) {
         console.log(path);
         var item = document.createElement('li');
-        var itemText = document.createTextNode(path.name);
-        var itemLink = document.createElement('a');
-        itemLink.appendChild(itemText);
-        item.appendChild(itemLink);
+        if (!path.trees) {
+            var itemText = document.createTextNode(path.name);
+            var itemLink = document.createElement('a');
+            itemLink.appendChild(itemText);
+            item.appendChild(itemLink);
+        }
         kids = path.children || path.trees
         if (kids && kids.length > 0) { // it's a directory, even if this is empty
             var kidList = document.createElement('ul');
@@ -52,6 +54,7 @@ function reviewScriptsForId(reviewId) {
      * and sets up behaviours for collapsing subdirectories.
      */
     function affectedFileListHandler(pathTreeData, status, req) {
+        $("#fileList>span").remove();
         $("#fileList").children('ul').append(pathToListItem(pathTreeData));
 
         // Find list items representing folders and turn them

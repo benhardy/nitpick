@@ -106,6 +106,32 @@ class ChangeSummarySpec extends FunSpec with MustMatchers with MockitoSugar {
           ))
         )))
       }
+
+      it("should sort trees directories-first") {
+        val diffs = Array(
+          mockDiffEntry("augh.txt", "augh.txt", MODIFY),
+          mockDiffEntry("a/bid.txt", "a/bid.txt", MODIFY),
+          mockDiffEntry("a/b/deep2.txt", "a/b/deep2.txt", MODIFY),
+          mockDiffEntry("a/b/deep1.txt", "a/b/deep1.txt", MODIFY)
+        )
+        val summary = ChangeSummary.fromDiffs(diffs.toList)
+        summary must be === ChangeSummary(List(
+            PathSegment("a", Nil,
+              List(
+                PathSegment("b", Nil,
+                  List(
+                    PathSegment("deep1.txt", diffs(3), Nil),
+                    PathSegment("deep2.txt", diffs(2), Nil)
+                  )
+                ),
+                PathSegment("bid.txt", diffs(1), Nil)
+              )
+            ),
+            PathSegment("augh.txt", diffs(0), Nil)
+          )
+        )
+
+      }
     }
   }
 }

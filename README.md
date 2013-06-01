@@ -27,7 +27,7 @@ you just made is located, e.g.:
 $ cd $name__snake$
 $ ./sbt  -Druntime.properties.file=/home/me/runtime.properties
 > container:start
-> ~ ;jacoco:cover;copy-resources;aux-compile
+> ~ ;test;jacoco:cover;copy-resources;aux-compile
 ```
 
 Now open the site's [root page](http://localhost:8080/) in your browser.

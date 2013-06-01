@@ -14,27 +14,32 @@ trait EnvironmentProperties extends (String => Option[String])
  */
 object EnvironmentProperties {
 
-  def streamFromFile(file: File): InputStream = {
-    new FileInputStream(file)
-  }
-
-  /**
-   * Upgrade a String=>Option[String] func to EnvironmentProperties
-   */
-  def from(func: String => Option[String]) = new EnvironmentProperties {
-    override def apply(key: String) = func(key)
-  }
-
   /**
    * Load the EnvironmentProperties from the specified file.
    * By default we just want to open the file in
    * the regular way. We do something else in tests.
    */
-  def apply(file:File, fileOpener: File=>InputStream = streamFromFile) = {
-    val propertiesFromFile = new Properties
-    propertiesFromFile.load(fileOpener(file))
+  def load(path :File): EnvironmentProperties = {
+    val propertiesFromFile = propertyLoad(path)
     from(key => Option(propertiesFromFile.getProperty(key)))
   }
+
+  def propertyLoad(path: File): Properties = {
+    val p = new Properties
+    p.load(new FileInputStream(path))
+    p
+  }
+
+  /**
+   * Wrap a String=>Option[String] function in an EnvironmentProperties
+   */
+  def from(func: String => Option[String]) = new EnvironmentProperties {
+    override def apply(key: String) = func(key)
+  }
+
+  def emptyProperties(key:String): Option[String] = None
+
+  val defaults = from(emptyProperties)
 }
 
 /**
@@ -58,13 +63,8 @@ class SystemProperties private[util](props:EnvironmentProperties) {
   /**
    * Figure out the path of the runtime properties file
    */
-  def runtimePropsPath: File = {
-    val path = props(runtimeConfigFileProperty).getOrElse {
-      val error = "system property '" + runtimeConfigFileProperty +
-        "' was not specified, giving up"
-      throw new IllegalStateException(error)
-    }
-    new File(path)
+  def runtimePropsPath: Option[File] = {
+    props(runtimeConfigFileProperty).map { path => new File(path) }
   }
 }
 
